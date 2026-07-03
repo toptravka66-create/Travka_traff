@@ -695,180 +695,84 @@
     </div>
 
     <script>
-        // Analytics & Data Management
-        class TravkaAnalytics {
-            constructor() {
-                this.storageKey = 'travka_analytics';
-                this.inquiriesKey = 'travka_inquiries';
-                this.init();
+        // Simple Analytics
+        function getStats() {
+            const stored = localStorage.getItem('travka_stats') || JSON.stringify({visitors: 0, inquiries: 0});
+            return JSON.parse(stored);
+        }
+
+        function saveStats(stats) {
+            localStorage.setItem('travka_stats', JSON.stringify(stats));
+        }
+
+        function getInquiries() {
+            const stored = localStorage.getItem('travka_inquiries') || '[]';
+            return JSON.parse(stored);
+        }
+
+        function saveInquiry(name, email, message) {
+            const inquiries = getInquiries();
+            inquiries.unshift({
+                name, email, message,
+                time: new Date().toLocaleString(),
+                device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
+            });
+            localStorage.setItem('travka_inquiries', JSON.stringify(inquiries));
+            
+            const stats = getStats();
+            stats.inquiries += 1;
+            saveStats(stats);
+        }
+
+        function trackVisitor() {
+            const today = new Date().toDateString();
+            const lastVisit = localStorage.getItem('lastVisit');
+            
+            if (lastVisit !== today) {
+                const stats = getStats();
+                stats.visitors += 1;
+                saveStats(stats);
+                localStorage.setItem('lastVisit', today);
             }
+        }
 
-            init() {
-                this.trackVisitor();
-                this.loadData();
-                this.updateDashboard();
-                this.setupFormListener();
-            }
+        function updateDashboard() {
+            const stats = getStats();
+            const inquiries = getInquiries().length;
+            const conversion = stats.visitors > 0 ? Math.round((inquiries / stats.visitors) * 100) : 0;
 
-            trackVisitor() {
-                const today = new Date().toDateString();
-                const data = this.getData();
-                
-                if (data.lastVisit !== today) {
-                    data.visitors += 1;
-                    data.lastVisit = today;
-                    this.saveData(data);
-                }
-            }
+            document.getElementById('stat-visitors').textContent = stats.visitors;
+            document.getElementById('stat-inquiries').textContent = inquiries;
+            document.getElementById('stat-conversion').textContent = conversion + '%';
 
-            getData() {
-                const stored = localStorage.getItem(this.storageKey);
-                return stored ? JSON.parse(stored) : {
-                    visitors: 0,
-                    inquiries: 0,
-                    lastVisit: new Date().toDateString()
-                };
-            }
+            document.getElementById('admin-total-visitors').textContent = stats.visitors;
+            document.getElementById('admin-total-inquiries').textContent = inquiries;
+            document.getElementById('admin-conversion').textContent = conversion + '%';
 
-            saveData(data) {
-                localStorage.setItem(this.storageKey, JSON.stringify(data));
-            }
-
-            getInquiries() {
-                const stored = localStorage.getItem(this.inquiriesKey);
-                return stored ? JSON.parse(stored) : [];
-            }
-
-            addInquiry(name, email, message) {
-                const inquiries = this.getInquiries();
-                const inquiry = {
-                    id: Date.now(),
-                    name,
-                    email,
-                    message,
-                    time: new Date().toLocaleString(),
-                    source: 'Form Submission',
-                    userAgent: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
-                };
-                inquiries.unshift(inquiry);
-                localStorage.setItem(this.inquiriesKey, JSON.stringify(inquiries));
-
-                // Update stats
-                const data = this.getData();
-                data.inquiries += 1;
-                this.saveData(data);
-
-                // Send to Telegram
-                this.sendToTelegram(inquiry);
-            }
-
-            sendToTelegram(inquiry) {
-                const message = `
-🎯 NEW INQUIRY - TRAVKA
-
-👤 Name: ${inquiry.name}
-📧 Email: ${inquiry.email}
-💬 Message: ${inquiry.message}
-⏰ Time: ${inquiry.time}
-📱 Device: ${inquiry.userAgent}
-
-Reply: https://t.me/soprano67_1
-                `;
-
-                // Using webhook or simple fetch to Telegram Bot API
-                // This is a placeholder - you'd need a backend service
-                console.log('Inquiry to send to Telegram:', inquiry);
-            }
-
-            loadData() {
-                this.updateDashboard();
-            }
-
-            updateDashboard() {
-                const data = this.getData();
-                const inquiries = this.getInquiries().length;
-                const conversion = data.visitors > 0 ? Math.round((inquiries / data.visitors) * 100) : 0;
-
-                document.getElementById('stat-visitors').textContent = data.visitors;
-                document.getElementById('stat-inquiries').textContent = inquiries;
-                document.getElementById('stat-conversion').textContent = conversion + '%';
-
-                document.getElementById('admin-total-visitors').textContent = data.visitors;
-                document.getElementById('admin-total-inquiries').textContent = inquiries;
-                document.getElementById('admin-conversion').textContent = conversion + '%';
-
-                this.updateInquiriesTable();
-            }
-
-            updateInquiriesTable() {
-                const inquiries = this.getInquiries();
-                const tbody = document.getElementById('inquiriesList');
-
-                if (inquiries.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#aaa;">No inquiries yet</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = inquiries.map(inq => `
+            const tbody = document.getElementById('inquiriesList');
+            if (inquiries === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#aaa;">No inquiries yet</td></tr>';
+            } else {
+                tbody.innerHTML = getInquiries().map(inq => `
                     <tr>
                         <td>${inq.name}</td>
                         <td>${inq.email}</td>
-                        <td>${inq.message.substring(0, 30)}...</td>
+                        <td>${inq.message.substring(0, 30)}</td>
                         <td>${inq.time}</td>
-                        <td>${inq.userAgent}</td>
+                        <td>${inq.device}</td>
                     </tr>
                 `).join('');
             }
-
-            setupFormListener() {
-                const form = document.getElementById('contactForm');
-                if (!form) return;
-
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const name = document.getElementById('name').value;
-                    const email = document.getElementById('email').value;
-                    const message = document.getElementById('message').value;
-
-                    this.addInquiry(name, email, message);
-
-                    // Show success message
-                    alert('✅ Thank you! We received your inquiry. Check Telegram @soprano67_1 for quick response!');
-                    form.reset();
-                    this.updateDashboard();
-                });
-            }
         }
 
-        // Export to CSV
-        function exportData() {
-            const analytics = new TravkaAnalytics();
-            const inquiries = analytics.getInquiries();
-            
-            let csv = 'Name,Email,Message,Time,Device\n';
-            inquiries.forEach(inq => {
-                csv += `"${inq.name}","${inq.email}","${inq.message}","${inq.time}","${inq.userAgent}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `travka_inquiries_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        // Admin Panel Functions
         function showAdmin(event) {
             event.preventDefault();
-            // Simple password protection
-            const password = prompt('Enter admin password:');
-            if (password === 'soprano67') {
+            const pwd = prompt('Password:');
+            if (pwd === 'soprano67') {
+                updateDashboard();
                 document.getElementById('adminPanel').style.display = 'flex';
-                analytics.updateDashboard();
             } else {
-                alert('❌ Incorrect password');
+                alert('Wrong password');
             }
         }
 
@@ -876,38 +780,64 @@ Reply: https://t.me/soprano67_1
             document.getElementById('adminPanel').style.display = 'none';
         }
 
-        // Initialize Analytics
-        const analytics = new TravkaAnalytics();
+        function exportData() {
+            const inqs = getInquiries();
+            let csv = 'Name,Email,Message,Time,Device\n';
+            inqs.forEach(i => {
+                csv += `"${i.name}","${i.email}","${i.message}","${i.time}","${i.device}"\n`;
+            });
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inquiries_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
 
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
-                if (href !== '#admin') {
+        // Form handler
+        document.addEventListener('DOMContentLoaded', function() {
+            trackVisitor();
+            updateDashboard();
+
+            const form = document.getElementById('contactForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    const target = document.querySelector(href);
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth' });
+                    const name = document.getElementById('name').value;
+                    const email = document.getElementById('email').value;
+                    const message = document.getElementById('message').value;
+                    
+                    saveInquiry(name, email, message);
+                    updateDashboard();
+                    alert('✅ Sent! Contact: @soprano67_1 on Telegram');
+                    form.reset();
+                });
+            }
+
+            // Smooth scroll
+            document.querySelectorAll('a[href^="#"]').forEach(a => {
+                a.addEventListener('click', function(e) {
+                    if (this.getAttribute('href') !== '#admin') {
+                        e.preventDefault();
                     }
-                }
+                });
             });
-        });
 
-        // Mouse follow glow effect
-        document.addEventListener('mousemove', (e) => {
-            const glows = document.querySelectorAll('.glow-overlay');
-            glows.forEach((glow, index) => {
-                const speed = index === 0 ? 0.1 : 0.05;
-                const x = (e.clientX * speed) - glow.offsetWidth / 2;
-                const y = (e.clientY * speed) - glow.offsetHeight / 2;
-                glow.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            // Mouse glow
+            document.addEventListener('mousemove', (e) => {
+                const glows = document.querySelectorAll('.glow-overlay');
+                glows.forEach((g, i) => {
+                    const s = i === 0 ? 0.1 : 0.05;
+                    g.style.transform = `translate(calc(-50% + ${e.clientX * s}px), calc(-50% + ${e.clientY * s}px))`;
+                });
             });
-        });
 
-        // Close modal when clicking outside
-        document.getElementById('adminPanel')?.addEventListener('click', (e) => {
-            if (e.target.id === 'adminPanel') {
-                closeAdmin();
+            // Modal close
+            const modal = document.getElementById('adminPanel');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target.id === 'adminPanel') closeAdmin();
+                });
             }
         });
     </script>
