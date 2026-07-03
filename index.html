@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAVKA - Traffic Generation & Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated background text */
+        .background-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(8rem, 20vw, 20rem);
+            font-weight: 900;
+            letter-spacing: 2rem;
+            text-align: center;
+            z-index: 0;
+            opacity: 0.12;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .background-text.green {
+            color: #00ff88;
+            text-shadow: 0 0 40px #00ff88, 0 0 80px #00ff88;
+            filter: drop-shadow(0 0 20px #00ff88);
+        }
+
+        .background-text.purple {
+            color: #9d00ff;
+            text-shadow: 0 0 40px #9d00ff, 0 0 80px #9d00ff;
+            filter: drop-shadow(0 0 20px #9d00ff);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(-50%, -50%) translateY(0);
+            }
+            50% {
+                transform: translate(-50%, -50%) translateY(-20px);
+            }
+        }
+
+        /* Glow effect overlay */
+        .glow-overlay {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glow-overlay.green {
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+            top: 20%;
+            right: 10%;
+            filter: blur(40px);
+            animation: moveGlow1 8s ease-in-out infinite;
+        }
+
+        .glow-overlay.purple {
+            background: radial-gradient(circle, rgba(157, 0, 255, 0.1) 0%, transparent 70%);
+            bottom: 20%;
+            left: 10%;
+            filter: blur(40px);
+            animation: moveGlow2 10s ease-in-out infinite;
+        }
+
+        @keyframes moveGlow1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 30px); }
+        }
+
+        @keyframes moveGlow2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, -30px); }
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2rem;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* Logo/Brand */
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 0.5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, #00ff88, #9d00ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Headline */
+        h1 {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .highlight-green {
+            color: #00ff88;
+            text-shadow: 0 0 20px #00ff88;
+        }
+
+        .highlight-purple {
+            color: #9d00ff;
+            text-shadow: 0 0 20px #9d00ff;
+        }
+
+        /* Subheadline */
+        .subheadline {
+            font-size: clamp(1rem, 3vw, 1.25rem);
+            color: #b0b0b0;
+            margin-bottom: 3rem;
+            line-height: 1.8;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Features list */
+        .features {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            font-size: 0.95rem;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 50px;
+            background: rgba(0, 255, 136, 0.05);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .feature:hover {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .feature-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        /* CTA Button */
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+            border: 2px solid #00ff88;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6f 100%);
+            color: #0a0e27;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:hover {
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.6);
+            transform: translateY(-3px);
+            letter-spacing: 0.1em;
+        }
+
+        .cta-button:active {
+            transform: translateY(-1px);
+        }
+
+        /* Secondary button */
+        .secondary-button {
+            display: inline-block;
+            margin-left: 1rem;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+            border: 2px solid #9d00ff;
+            background: rgba(157, 0, 255, 0.1);
+            color: #9d00ff;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(157, 0, 255, 0.2);
+            text-transform: uppercase;
+        }
+
+        .secondary-button:hover {
+            background: rgba(157, 0, 255, 0.2);
+            box-shadow: 0 0 40px rgba(157, 0, 255, 0.4);
+            transform: translateY(-3px);
+        }
+
+        /* Button container */
+        .buttons {
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .cta-button,
+            .secondary-button {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .background-text {
+                font-size: clamp(4rem, 15vw, 12rem);
+                opacity: 0.08;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(0, 255, 136, 0.2);
+            font-size: 0.85rem;
+            color: #707070;
+        }
+
+        .social-links {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        .social-links a {
+            color: #00ff88;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #9d00ff;
+            text-shadow: 0 0 10px #9d00ff;
+        }
+
+        /* Scroll indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            color: #00ff88;
+            z-index: 10;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background glows -->
+    <div class="glow-overlay green"></div>
+    <div class="glow-overlay purple"></div>
+
+    <!-- Background text -->
+    <div class="background-text green">T R A V K A</div>
+
+    <!-- Main content -->
+    <div class="container">
+        <div class="logo">TRAVKA</div>
+
+        <h1>
+            <span class="highlight-green">Automate</span> Your Growth<br>
+            <span class="highlight-purple">Drive</span> Real Traffic & <span class="highlight-green">Convert</span>
+        </h1>
+
+        <p class="subheadline">
+            Dominate social media, acquire clients at scale, and accelerate revenue growth with cutting-edge automation technology.
+        </p>
+
+        <div class="features">
+            <div class="feature">
+                <span class="feature-dot"></span>
+                <span>Social Media Automation</span>
+            </div>
+            <div class="feature">
+                <span class="feature-dot"></span>
+                <span>Client Acquisition</span>
+            </div>
+            <div class="feature">
+                <span class="feature-dot"></span>
+                <span>Traffic Generation</span>
+            </div>
+            <div class="feature">
+                <span class="feature-dot"></span>
+                <span>24/7 Optimization</span>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="https://t.me/soprano67_1" class="cta-button" target="_blank" rel="noopener noreferrer">
+                Join on Telegram
+            </a>
+            <a href="#learn-more" class="secondary-button">Learn More</a>
+        </div>
+
+        <div class="footer">
+            <p>Join hundreds of businesses automating their growth</p>
+            <div class="social-links">
+                <a href="https://t.me/soprano67_1" target="_blank" rel="noopener noreferrer">Telegram</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scroll on button click
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Mouse follow glow effect
+        document.addEventListener('mousemove', (e) => {
+            const glows = document.querySelectorAll('.glow-overlay');
+            glows.forEach((glow, index) => {
+                const speed = index === 0 ? 0.1 : 0.05;
+                const x = (e.clientX * speed) - glow.offsetWidth / 2;
+                const y = (e.clientY * speed) - glow.offsetHeight / 2;
+                glow.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            });
+        });
+    </script>
+</body>
+</html>
